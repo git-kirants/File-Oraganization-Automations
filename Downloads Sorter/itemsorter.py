@@ -2,45 +2,39 @@ from os import scandir, rename
 from os.path import splitext, exists, join
 from shutil import move
 from time import sleep
-
 import logging
-
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# ! FILL IN BELOW
-# ? folder to track e.g. Windows: "C:\\Users\\UserName\\Downloads"
+# Define source and destination directories
 source_dir = "C:\\Users\\Kiran T S\\Downloads"
 dest_dir_music = "C:\\Users\\Kiran T S\\Music\\Downloaded Musics"
 dest_dir_video = "C:\\Users\\Kiran T S\\Videos\\Downloaded Videos"
 dest_dir_image = "C:\\Users\\Kiran T S\\Pictures\\Downloaded Images"
 dest_dir_documents = "C:\\Users\\Kiran T S\\Documents\\Downloaded Documents"
-dest_dir_zip = "C:\\Users\\Kiran T S\\Downloads\\[ZIP] Files" 
+dest_dir_zip = "C:\\Users\\Kiran T S\\Downloads\\[ZIP] Files"
+dest_dir_photoshop = "C:\\Users\\Kiran T S\\Documents\\[Photoshop] Files"
+dest_dir_aftereffects = "C:\\Users\\Kiran T S\\Documents\\[AfterEffects] Files"
 
-# ? supported image types
-image_extensions = [".jpg", ".jpeg", ".jpe", ".jif", ".jfif", ".jfi", ".png", ".gif", ".webp", ".tiff", ".tif", ".psd", ".raw", ".arw", ".cr2", ".nrw",
-                    ".k25", ".bmp", ".dib", ".heif", ".heic", ".ind", ".indd", ".indt", ".jp2", ".j2k", ".jpf", ".jpf", ".jpx", ".jpm", ".mj2", ".svg", ".svgz", ".ai", ".eps", ".ico"]
-# ? supported Video types
-video_extensions = [".webm", ".mpg", ".mp2", ".mpeg", ".mpe", ".mpv", ".ogg",
-                    ".mp4", ".mp4v", ".m4v", ".avi", ".wmv", ".mov", ".qt", ".flv", ".swf", ".avchd"]
-# ? supported Audio types
-audio_extensions = [".m4a", ".flac", "mp3", ".wav", ".wma", ".aac"]
-# ? supported Document types
-document_extensions = [".doc", ".docx", ".odt",
-                       ".pdf", ".xls", ".xlsx", ".ppt", ".pptx"]
+# Supported file extensions
+image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".tiff", ".bmp", ".heif", ".heic", ".svg", ".ai", ".eps", ".ico"]
+video_extensions = [".webm", ".mpg", ".mp4", ".avi", ".mov", ".flv", ".wmv"]
+audio_extensions = [".m4a", ".flac", ".mp3", ".wav", ".wma", ".aac"]
+document_extensions = [".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx"]
 zip_extensions = [".zip", ".rar", ".7z"]
+psd_extensions = [".psd", ".psb"]
+ae_extensions = [".aep"]
 
+# Utility function to ensure unique filenames
 def make_unique(dest, name):
     filename, extension = splitext(name)
     counter = 1
-    # * IF FILE EXISTS, ADDS NUMBER TO THE END OF THE FILENAME
     while exists(f"{dest}/{name}"):
         name = f"{filename}({str(counter)}){extension}"
         counter += 1
-
     return name
 
-
+# Move files to the destination directory
 def move_file(dest, entry, name):
     if exists(f"{dest}/{name}"):
         unique_name = make_unique(dest, name)
@@ -49,10 +43,8 @@ def move_file(dest, entry, name):
         rename(oldName, newName)
     move(entry, dest)
 
-
+# Event handler for file modifications
 class MoverHandler(FileSystemEventHandler):
-    # ? THIS FUNCTION WILL RUN WHENEVER THERE IS A CHANGE IN "source_dir"
-    # ? .upper is for not missing out on files with uppercase extensions
     def on_modified(self, event):
         with scandir(source_dir) as entries:
             for entry in entries:
@@ -61,34 +53,45 @@ class MoverHandler(FileSystemEventHandler):
                 self.check_video_files(entry, name)
                 self.check_image_files(entry, name)
                 self.check_document_files(entry, name)
+                self.check_zip_files(entry,name)
+                self.check_psd_files(entry, name)
+                self.check_ae_files(entry, name)
 
-    def check_audio_files(self, entry, name):  # * Checks all Audio Files
+    def check_audio_files(self, entry, name):
         for audio_extension in audio_extensions:
             if name.endswith(audio_extension) or name.endswith(audio_extension.upper()):
-                dest = dest_dir_music
-                move_file(dest, entry, name)
-                logging.info(f"Moved audio file: {name}")
+                move_file(dest_dir_music, entry, name)
 
-    def check_video_files(self, entry, name):  # * Checks all Video Files
+    def check_video_files(self, entry, name):
         for video_extension in video_extensions:
             if name.endswith(video_extension) or name.endswith(video_extension.upper()):
                 move_file(dest_dir_video, entry, name)
-                logging.info(f"Moved video file: {name}")
 
-    def check_image_files(self, entry, name):  # * Checks all Image Files
+    def check_image_files(self, entry, name):
         for image_extension in image_extensions:
             if name.endswith(image_extension) or name.endswith(image_extension.upper()):
                 move_file(dest_dir_image, entry, name)
-                logging.info(f"Moved image file: {name}")
 
-    def check_document_files(self, entry, name):  # * Checks all Document Files
+    def check_document_files(self, entry, name):
         for documents_extension in document_extensions:
             if name.endswith(documents_extension) or name.endswith(documents_extension.upper()):
                 move_file(dest_dir_documents, entry, name)
-                logging.info(f"Moved document file: {name}")
 
+    def check_psd_files(self, entry, name):
+        for psd_extension in psd_extensions:
+            if name.endswith(psd_extension) or name.endswith(psd_extension.upper()):
+                move_file(dest_dir_photoshop, entry, name)
 
-# ! NO NEED TO CHANGE BELOW CODE
+    def check_ae_files(self, entry, name):
+        for ae_extension in ae_extensions:
+            if name.endswith(ae_extension) or name.endswith(ae_extension.upper()):
+                move_file(dest_dir_aftereffects, entry, name)
+    def check_zip_files(self, entry, name):
+        for zip_extension in zip_extensions:
+            if name.endswith(zip_extension) or name.endswith(zip_extension.upper()):
+                move_file(dest_dir_zip, entry, name)
+
+# Main program execution
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
@@ -104,5 +107,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
-
-print("\nScript Excecuted Successfully! :)")
